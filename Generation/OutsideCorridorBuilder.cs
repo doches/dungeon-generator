@@ -4,19 +4,22 @@ namespace DungeonGenerator.Generation;
 
 public static class OutsideCorridorBuilder
 {
-    private const double Probability = 0.25;
-
     /// <summary>
     /// Builds outside corridors connecting same-side rooms and branches off their
-    /// horizontal segments. Returns the branch corridors so Generator can attach rooms.
+    /// horizontal segments. Always attempts to build 1–4 outside corridors total.
+    /// Returns the branch corridors so Generator can attach rooms.
     /// All corridors (outside + branches) are added to dungeon.Corridors directly.
     /// </summary>
     public static List<Corridor> Build(
         Dungeon dungeon, List<Corridor> branches, Random rng, ref int nextId)
     {
         var outsideBranches = new List<Corridor>();
-        TryConnectSide(dungeon, GetSideRooms(dungeon, branches, north: true),  true,  rng, ref nextId, outsideBranches);
-        TryConnectSide(dungeon, GetSideRooms(dungeon, branches, north: false), false, rng, ref nextId, outsideBranches);
+        int target = rng.Next(1, 5); // always build 1–4
+
+        int northBuilt = TryConnectSide(
+            dungeon, GetSideRooms(dungeon, branches, north: true),  true,  rng, ref nextId, outsideBranches, target);
+        TryConnectSide(
+            dungeon, GetSideRooms(dungeon, branches, north: false), false, rng, ref nextId, outsideBranches, target - northBuilt);
         return outsideBranches;
     }
 
@@ -28,23 +31,31 @@ public static class OutsideCorridorBuilder
             .OrderBy(r => r.Bounds.X)
             .ToList();
 
-    private static void TryConnectSide(
+    private static int TryConnectSide(
         Dungeon dungeon, List<Room> rooms, bool north, Random rng,
-        ref int nextId, List<Corridor> outsideBranches)
+        ref int nextId, List<Corridor> outsideBranches, int maxCount)
     {
-        var used = new HashSet<int>();
+        if (maxCount <= 0 || rooms.Count < 2) return 0;
 
-        for (int i = 0; i < rooms.Count; i++)
+        // Build all valid candidate pairs (2–6 rooms apart), then shuffle for variety
+        var candidates = new List<(int i, int j)>();
+        for (int i = 0; i < rooms.Count - 1; i++)
+            for (int dist = 2; dist <= Math.Min(6, rooms.Count - i - 1); dist++)
+                candidates.Add((i, i + dist));
+
+        for (int k = candidates.Count - 1; k > 0; k--)
         {
-            if (used.Contains(rooms[i].Id)) continue;
-            if (rng.NextDouble() > Probability) continue;
+            int s = rng.Next(k + 1);
+            (candidates[k], candidates[s]) = (candidates[s], candidates[k]);
+        }
 
-            int maxDist = Math.Min(6, rooms.Count - i - 1);
-            if (maxDist < 2) continue;
+        var used  = new HashSet<int>();
+        int built = 0;
 
-            int dist = rng.Next(2, maxDist + 1);
-            int j    = i + dist;
-            if (used.Contains(rooms[j].Id)) continue;
+        foreach (var (i, j) in candidates)
+        {
+            if (built >= maxCount) break;
+            if (used.Contains(rooms[i].Id) || used.Contains(rooms[j].Id)) continue;
 
             var (corridor, branchList) = TryBuild(dungeon, rooms[i], rooms[j], north, rng, ref nextId);
             if (corridor is null) continue;
@@ -54,7 +65,10 @@ public static class OutsideCorridorBuilder
             outsideBranches.AddRange(branchList);
             used.Add(rooms[i].Id);
             used.Add(rooms[j].Id);
+            built++;
         }
+
+        return built;
     }
 
     private static (Corridor? corridor, List<Corridor> branches) TryBuild(
