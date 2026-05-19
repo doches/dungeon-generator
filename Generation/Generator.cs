@@ -71,7 +71,11 @@ public static class Generator
             if (room is not null) dungeon.Rooms.Add(room);
         }
 
-        // 6. Doors, corridor walls, connections
+        // 6. Outside corridors: low-probability horizontal loops along the north/south sides
+        int nextCorridorId = dungeon.Corridors.Max(c => c.Id) + 1;
+        OutsideCorridorBuilder.Build(dungeon, branches, rng, ref nextCorridorId);
+
+        // 7. Doors, corridor walls, connections
         DoorPlacer.PlaceAll(dungeon, bends);
 
         return dungeon;
