@@ -86,6 +86,47 @@ public static class Generator
             dungeon.Corridors.Remove(dead);
         }
 
+        // 5b. Prune rooms with fewer than 5 floor tiles
+        var prunedIds          = new HashSet<int>();
+        var prunedAttachPoints = new HashSet<Pt>();
+        foreach (var room in dungeon.Rooms.ToList())
+        {
+            var union = new HashSet<(int x, int y)>();
+            foreach (var rect in room.Tiles)
+                for (int rx = rect.X; rx < rect.X + rect.Width; rx++)
+                    for (int ry = rect.Y; ry < rect.Y + rect.Height; ry++)
+                        union.Add((rx, ry));
+
+            if (union.Count(p => dungeon.Grid[p.x, p.y] == TileType.Floor) >= 5) continue;
+
+            foreach (var (x, y) in union)
+                dungeon.Grid[x, y] = TileType.Void;
+
+            prunedIds.Add(room.Id);
+            prunedAttachPoints.Add(room.AttachPoint);
+            dungeon.Rooms.Remove(room);
+        }
+
+        if (prunedIds.Count > 0)
+        {
+            // Cascade-prune branch corridors whose room was just removed
+            var orphans = dungeon.Corridors
+                .Where(c => c.Kind == CorridorKind.Branch && prunedAttachPoints.Contains(c.End))
+                .ToList();
+            foreach (var c in orphans)
+            {
+                foreach (var pt in c.Spine)
+                    if (dungeon.Grid[pt.X, pt.Y] == TileType.VertCorridor)
+                        dungeon.Grid[pt.X, pt.Y] = TileType.Void;
+                dungeon.Corridors.Remove(c);
+            }
+
+            // Strip door records referencing pruned rooms (defensive — doors placed after this step)
+            dungeon.Doors.RemoveAll(d =>
+                (d.RoomAId.HasValue && prunedIds.Contains(d.RoomAId.Value)) ||
+                (d.RoomBId.HasValue && prunedIds.Contains(d.RoomBId.Value)));
+        }
+
         // 6. Outside corridors: low-probability horizontal loops along the north/south sides
         int nextCorridorId = dungeon.Corridors.Max(c => c.Id) + 1;
         OutsideCorridorBuilder.Build(dungeon, branches, rng, ref nextCorridorId);
