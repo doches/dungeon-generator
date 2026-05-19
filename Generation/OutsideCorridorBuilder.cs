@@ -14,8 +14,8 @@ public static class OutsideCorridorBuilder
 
     private static List<Room> GetSideRooms(Dungeon dungeon, List<Corridor> branches, bool north)
         => branches
-            .Where(b => (north ? b.End.Y < b.Start.Y : b.End.Y > b.Start.Y) && b.AttachedRoomId.HasValue)
-            .Select(b => dungeon.Rooms.FirstOrDefault(r => r.Id == b.AttachedRoomId))
+            .Where(b => north ? b.End.Y < b.Start.Y : b.End.Y > b.Start.Y)
+            .Select(b => dungeon.Rooms.FirstOrDefault(r => r.AttachPoint == b.End))
             .OfType<Room>()
             .OrderBy(r => r.Bounds.X)
             .ToList();

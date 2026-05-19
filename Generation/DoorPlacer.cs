@@ -44,6 +44,8 @@ public static class DoorPlacer
 
         PlaceSharedWallDoors(dungeon, ref doorId, usedWalls);
 
+        RemoveStrayDoors(dungeon);
+
         BuildConnections(dungeon);
     }
 
@@ -214,6 +216,41 @@ public static class DoorPlacer
 
             x += dx;
             y += dy;
+        }
+    }
+
+    // ── Stray door removal ────────────────────────────────────────────────────
+    // A door is valid only if it has a traversable tile on both sides along
+    // exactly one axis (the axis it was intended to open across).
+    private static void RemoveStrayDoors(Dungeon dungeon)
+    {
+        static bool Traversable(TileType t) =>
+            t == TileType.Floor      || t == TileType.Door
+         || t == TileType.SpineCorridor || t == TileType.HorizCorridor
+         || t == TileType.VertCorridor;
+
+        bool TileOk(int x, int y)
+        {
+            if (x < 0 || y < 0 || x >= dungeon.Width || y >= dungeon.Height) return false;
+            return Traversable(dungeon.Grid[x, y]);
+        }
+
+        var stray = new List<Pt>();
+        for (int x = 0; x < dungeon.Width; x++)
+            for (int y = 0; y < dungeon.Height; y++)
+            {
+                if (dungeon.Grid[x, y] != TileType.Door) continue;
+                bool horizOk = TileOk(x - 1, y) && TileOk(x + 1, y);
+                bool vertOk  = TileOk(x, y - 1) && TileOk(x, y + 1);
+                if (!horizOk && !vertOk) stray.Add(new Pt(x, y));
+            }
+
+        foreach (var pt in stray)
+        {
+            dungeon.Grid[pt.X, pt.Y] = TileType.Wall;
+            foreach (var room in dungeon.Rooms)
+                room.DoorPositions.RemoveAll(d => d == pt);
+            dungeon.Doors.RemoveAll(d => d.Position == pt);
         }
     }
 
