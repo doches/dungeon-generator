@@ -6,13 +6,13 @@ using DungeonGenerator.Output;
 // ── Default room-type configuration ──────────────────────────────────────────
 const string DefaultConfig = """
 [
-  { "name": "Bridge",       "weight": 0,  "minWidth": 8, "maxWidth": 14, "minHeight": 6, "maxHeight": 10, "isAnchorFore": true  },
-  { "name": "Engineering",  "weight": 0,  "minWidth": 8, "maxWidth": 14, "minHeight": 6, "maxHeight": 10, "isAnchorAft":  true  },
-  { "name": "MedBay",       "weight": 10, "minWidth": 5, "maxWidth": 9,  "minHeight": 4, "maxHeight": 7  },
-  { "name": "Armory",       "weight": 8,  "minWidth": 4, "maxWidth": 8,  "minHeight": 4, "maxHeight": 6  },
-  { "name": "CrewQuarters", "weight": 12, "minWidth": 5, "maxWidth": 10, "minHeight": 4, "maxHeight": 8  },
-  { "name": "Storage",      "weight": 15, "minWidth": 4, "maxWidth": 7,  "minHeight": 3, "maxHeight": 6  },
-  { "name": "Lab",          "weight": 8,  "minWidth": 5, "maxWidth": 9,  "minHeight": 4, "maxHeight": 7  }
+  { "name": "Bridge",       "weight": 0,  "minWidth": 11, "maxWidth": 17, "minHeight": 9,  "maxHeight": 13, "isAnchorFore": true  },
+  { "name": "Engineering",  "weight": 0,  "minWidth": 11, "maxWidth": 17, "minHeight": 9,  "maxHeight": 13, "isAnchorAft":  true  },
+  { "name": "MedBay",       "weight": 10, "minWidth": 8,  "maxWidth": 12, "minHeight": 7,  "maxHeight": 10 },
+  { "name": "Armory",       "weight": 8,  "minWidth": 7,  "maxWidth": 11, "minHeight": 7,  "maxHeight": 9  },
+  { "name": "CrewQuarters", "weight": 12, "minWidth": 8,  "maxWidth": 13, "minHeight": 7,  "maxHeight": 11 },
+  { "name": "Storage",      "weight": 15, "minWidth": 7,  "maxWidth": 10, "minHeight": 6,  "maxHeight": 9  },
+  { "name": "Lab",          "weight": 8,  "minWidth": 8,  "maxWidth": 12, "minHeight": 7,  "maxHeight": 10 }
 ]
 """;
 
