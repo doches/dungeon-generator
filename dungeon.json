@@ -1,0 +1,790 @@
+{
+  "gridWidth": 200,
+  "gridHeight": 80,
+  "rooms": [
+    {
+      "id": 0,
+      "type": "Bridge",
+      "isAnchor": true,
+      "bounds": {
+        "x": 6,
+        "y": 37,
+        "width": 10,
+        "height": 8
+      },
+      "tiles": [
+        {
+          "x": 8,
+          "y": 37,
+          "width": 8,
+          "height": 6
+        },
+        {
+          "x": 10,
+          "y": 42,
+          "width": 3,
+          "height": 3
+        },
+        {
+          "x": 6,
+          "y": 38,
+          "width": 3,
+          "height": 3
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 15,
+          "y": 40
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 1,
+      "type": "Engineering",
+      "isAnchor": true,
+      "bounds": {
+        "x": 184,
+        "y": 31,
+        "width": 11,
+        "height": 10
+      },
+      "tiles": [
+        {
+          "x": 184,
+          "y": 31,
+          "width": 11,
+          "height": 10
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 184,
+          "y": 36
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 2,
+      "type": "CrewQuarters",
+      "bounds": {
+        "x": 36,
+        "y": 41,
+        "width": 8,
+        "height": 5
+      },
+      "tiles": [
+        {
+          "x": 36,
+          "y": 41,
+          "width": 8,
+          "height": 5
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 36,
+          "y": 43
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 3,
+      "type": "MedBay",
+      "bounds": {
+        "x": 56,
+        "y": 42,
+        "width": 9,
+        "height": 4
+      },
+      "tiles": [
+        {
+          "x": 56,
+          "y": 42,
+          "width": 9,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 56,
+          "y": 44
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 4,
+      "type": "Lab",
+      "bounds": {
+        "x": 77,
+        "y": 37,
+        "width": 9,
+        "height": 4
+      },
+      "tiles": [
+        {
+          "x": 77,
+          "y": 37,
+          "width": 9,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 77,
+          "y": 39
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 5,
+      "type": "CrewQuarters",
+      "bounds": {
+        "x": 98,
+        "y": 31,
+        "width": 9,
+        "height": 5
+      },
+      "tiles": [
+        {
+          "x": 98,
+          "y": 31,
+          "width": 9,
+          "height": 5
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 98,
+          "y": 33
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 6,
+      "type": "MedBay",
+      "bounds": {
+        "x": 118,
+        "y": 31,
+        "width": 6,
+        "height": 4
+      },
+      "tiles": [
+        {
+          "x": 118,
+          "y": 31,
+          "width": 6,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 118,
+          "y": 33
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 7,
+      "type": "Lab",
+      "bounds": {
+        "x": 139,
+        "y": 36,
+        "width": 8,
+        "height": 5
+      },
+      "tiles": [
+        {
+          "x": 139,
+          "y": 36,
+          "width": 8,
+          "height": 5
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 139,
+          "y": 38
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 8,
+      "type": "Lab",
+      "bounds": {
+        "x": 159,
+        "y": 37,
+        "width": 5,
+        "height": 4
+      },
+      "tiles": [
+        {
+          "x": 159,
+          "y": 37,
+          "width": 5,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 159,
+          "y": 39
+        }
+      ],
+      "connections": [
+        0
+      ]
+    },
+    {
+      "id": 9,
+      "type": "Storage",
+      "bounds": {
+        "x": 24,
+        "y": 46,
+        "width": 7,
+        "height": 4
+      },
+      "tiles": [
+        {
+          "x": 24,
+          "y": 46,
+          "width": 7,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 27,
+          "y": 46
+        }
+      ],
+      "connections": [
+        1
+      ]
+    },
+    {
+      "id": 10,
+      "type": "CrewQuarters",
+      "bounds": {
+        "x": 39,
+        "y": 53,
+        "width": 13,
+        "height": 7
+      },
+      "tiles": [
+        {
+          "x": 39,
+          "y": 53,
+          "width": 10,
+          "height": 7
+        },
+        {
+          "x": 48,
+          "y": 54,
+          "width": 4,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 44,
+          "y": 53
+        }
+      ],
+      "connections": [
+        2
+      ]
+    },
+    {
+      "id": 11,
+      "type": "Storage",
+      "bounds": {
+        "x": 63,
+        "y": 45,
+        "width": 10,
+        "height": 5
+      },
+      "tiles": [
+        {
+          "x": 65,
+          "y": 45,
+          "width": 6,
+          "height": 5
+        },
+        {
+          "x": 63,
+          "y": 46,
+          "width": 3,
+          "height": 3
+        },
+        {
+          "x": 70,
+          "y": 46,
+          "width": 3,
+          "height": 3
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 68,
+          "y": 45
+        }
+      ],
+      "connections": [
+        3
+      ]
+    },
+    {
+      "id": 12,
+      "type": "Storage",
+      "bounds": {
+        "x": 84,
+        "y": 23,
+        "width": 8,
+        "height": 8
+      },
+      "tiles": [
+        {
+          "x": 86,
+          "y": 25,
+          "width": 6,
+          "height": 6
+        },
+        {
+          "x": 86,
+          "y": 23,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 84,
+          "y": 26,
+          "width": 3,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 89,
+          "y": 30
+        }
+      ],
+      "connections": [
+        4
+      ]
+    },
+    {
+      "id": 13,
+      "type": "Lab",
+      "bounds": {
+        "x": 102,
+        "y": 20,
+        "width": 9,
+        "height": 5
+      },
+      "tiles": [
+        {
+          "x": 102,
+          "y": 20,
+          "width": 9,
+          "height": 5
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 106,
+          "y": 24
+        }
+      ],
+      "connections": [
+        5
+      ]
+    },
+    {
+      "id": 14,
+      "type": "Storage",
+      "bounds": {
+        "x": 127,
+        "y": 39,
+        "width": 6,
+        "height": 3
+      },
+      "tiles": [
+        {
+          "x": 127,
+          "y": 39,
+          "width": 6,
+          "height": 3
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 130,
+          "y": 39
+        }
+      ],
+      "connections": [
+        6
+      ]
+    },
+    {
+      "id": 15,
+      "type": "Lab",
+      "bounds": {
+        "x": 148,
+        "y": 45,
+        "width": 6,
+        "height": 4
+      },
+      "tiles": [
+        {
+          "x": 148,
+          "y": 45,
+          "width": 6,
+          "height": 4
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 151,
+          "y": 45
+        }
+      ],
+      "connections": [
+        7
+      ]
+    },
+    {
+      "id": 16,
+      "type": "Storage",
+      "bounds": {
+        "x": 166,
+        "y": 43,
+        "width": 6,
+        "height": 5
+      },
+      "tiles": [
+        {
+          "x": 166,
+          "y": 43,
+          "width": 6,
+          "height": 5
+        }
+      ],
+      "doorPositions": [
+        {
+          "x": 169,
+          "y": 43
+        }
+      ],
+      "connections": [
+        8
+      ]
+    }
+  ],
+  "corridors": [
+    {
+      "id": 0,
+      "kind": "Spine",
+      "start": {
+        "x": 16,
+        "y": 40
+      },
+      "end": {
+        "x": 183,
+        "y": 36
+      }
+    },
+    {
+      "id": 1,
+      "kind": "Branch",
+      "start": {
+        "x": 27,
+        "y": 40
+      },
+      "end": {
+        "x": 27,
+        "y": 45
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 9
+    },
+    {
+      "id": 2,
+      "kind": "Branch",
+      "start": {
+        "x": 44,
+        "y": 46
+      },
+      "end": {
+        "x": 44,
+        "y": 52
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 10
+    },
+    {
+      "id": 3,
+      "kind": "Branch",
+      "start": {
+        "x": 68,
+        "y": 41
+      },
+      "end": {
+        "x": 68,
+        "y": 44
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 11
+    },
+    {
+      "id": 4,
+      "kind": "Branch",
+      "start": {
+        "x": 89,
+        "y": 36
+      },
+      "end": {
+        "x": 89,
+        "y": 31
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 12
+    },
+    {
+      "id": 5,
+      "kind": "Branch",
+      "start": {
+        "x": 106,
+        "y": 30
+      },
+      "end": {
+        "x": 106,
+        "y": 25
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 13
+    },
+    {
+      "id": 6,
+      "kind": "Branch",
+      "start": {
+        "x": 130,
+        "y": 35
+      },
+      "end": {
+        "x": 130,
+        "y": 38
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 14
+    },
+    {
+      "id": 7,
+      "kind": "Branch",
+      "start": {
+        "x": 151,
+        "y": 41
+      },
+      "end": {
+        "x": 151,
+        "y": 44
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 15
+    },
+    {
+      "id": 8,
+      "kind": "Branch",
+      "start": {
+        "x": 169,
+        "y": 36
+      },
+      "end": {
+        "x": 169,
+        "y": 42
+      },
+      "parentCorridorId": 0,
+      "attachedRoomId": 16
+    }
+  ],
+  "doors": [
+    {
+      "id": 0,
+      "position": {
+        "x": 15,
+        "y": 40
+      },
+      "roomAId": 0,
+      "corridorId": 0
+    },
+    {
+      "id": 1,
+      "position": {
+        "x": 184,
+        "y": 36
+      },
+      "roomAId": 1,
+      "corridorId": 0
+    },
+    {
+      "id": 2,
+      "position": {
+        "x": 27,
+        "y": 46
+      },
+      "roomAId": 9,
+      "corridorId": 1
+    },
+    {
+      "id": 3,
+      "position": {
+        "x": 44,
+        "y": 53
+      },
+      "roomAId": 10,
+      "corridorId": 2
+    },
+    {
+      "id": 4,
+      "position": {
+        "x": 68,
+        "y": 45
+      },
+      "roomAId": 11,
+      "corridorId": 3
+    },
+    {
+      "id": 5,
+      "position": {
+        "x": 89,
+        "y": 30
+      },
+      "roomAId": 12,
+      "corridorId": 4
+    },
+    {
+      "id": 6,
+      "position": {
+        "x": 106,
+        "y": 24
+      },
+      "roomAId": 13,
+      "corridorId": 5
+    },
+    {
+      "id": 7,
+      "position": {
+        "x": 130,
+        "y": 39
+      },
+      "roomAId": 14,
+      "corridorId": 6
+    },
+    {
+      "id": 8,
+      "position": {
+        "x": 151,
+        "y": 45
+      },
+      "roomAId": 15,
+      "corridorId": 7
+    },
+    {
+      "id": 9,
+      "position": {
+        "x": 169,
+        "y": 43
+      },
+      "roomAId": 16,
+      "corridorId": 8
+    },
+    {
+      "id": 10,
+      "position": {
+        "x": 36,
+        "y": 43
+      },
+      "roomAId": 2,
+      "corridorId": 0
+    },
+    {
+      "id": 11,
+      "position": {
+        "x": 56,
+        "y": 44
+      },
+      "roomAId": 3,
+      "corridorId": 0
+    },
+    {
+      "id": 12,
+      "position": {
+        "x": 77,
+        "y": 39
+      },
+      "roomAId": 4,
+      "corridorId": 0
+    },
+    {
+      "id": 13,
+      "position": {
+        "x": 98,
+        "y": 33
+      },
+      "roomAId": 5,
+      "corridorId": 0
+    },
+    {
+      "id": 14,
+      "position": {
+        "x": 118,
+        "y": 33
+      },
+      "roomAId": 6,
+      "corridorId": 0
+    },
+    {
+      "id": 15,
+      "position": {
+        "x": 139,
+        "y": 38
+      },
+      "roomAId": 7,
+      "corridorId": 0
+    },
+    {
+      "id": 16,
+      "position": {
+        "x": 159,
+        "y": 39
+      },
+      "roomAId": 8,
+      "corridorId": 0
+    }
+  ]
+}
