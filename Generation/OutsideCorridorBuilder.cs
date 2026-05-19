@@ -71,13 +71,37 @@ public static class OutsideCorridorBuilder
         return built;
     }
 
+    // Find a column at the room's outer boundary row that has Wall + interior Floor neighbour.
+    // The bounding-box centre can fall in a gap when a wing widens the box, so we scan outward.
+    private static int FindBoundaryX(Dungeon dungeon, Room room, bool north)
+    {
+        int boundaryY = north ? room.Bounds.Y : room.Bounds.Y + room.Bounds.Height - 1;
+        int interiorY = north ? boundaryY + 1  : boundaryY - 1;
+        int centerX   = room.Bounds.X + room.Bounds.Width / 2;
+
+        for (int delta = 0; delta <= room.Bounds.Width / 2 + 1; delta++)
+        {
+            foreach (int x in delta == 0
+                ? (IEnumerable<int>)new[] { centerX }
+                : new[] { centerX - delta, centerX + delta })
+            {
+                if (x < 1 || x >= dungeon.Width - 1) continue;
+                if (interiorY < 1 || interiorY >= dungeon.Height - 1) continue;
+                if (dungeon.Grid[x, boundaryY] == TileType.Wall
+                 && dungeon.Grid[x, interiorY]  == TileType.Floor)
+                    return x;
+            }
+        }
+        return centerX; // fallback: no scan result (very unusual)
+    }
+
     private static (Corridor? corridor, List<Corridor> branches) TryBuild(
         Dungeon dungeon, Room a, Room b, bool north, Random rng, ref int nextId)
     {
         int corridorId = nextId++;
 
-        int xA = a.Bounds.X + a.Bounds.Width  / 2;
-        int xB = b.Bounds.X + b.Bounds.Width  / 2;
+        int xA = FindBoundaryX(dungeon, a, north);
+        int xB = FindBoundaryX(dungeon, b, north);
         if (Math.Abs(xA - xB) < 3) return (null, new());
 
         int yCorr = north
