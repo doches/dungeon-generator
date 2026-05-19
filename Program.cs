@@ -19,6 +19,7 @@ const string DefaultConfig = """
 // ── CLI parsing ───────────────────────────────────────────────────────────────
 int width       = 80;
 int height      = 40;
+int snakiness   = 0;
 string? cfgPath = null;
 string? outJson = null;
 string? outAscii= null;
@@ -28,11 +29,12 @@ for (int i = 0; i < args.Length; i++)
 {
     switch (args[i])
     {
-        case "--width"        when i + 1 < args.Length: width    = int.Parse(args[++i]); break;
-        case "--height"       when i + 1 < args.Length: height   = int.Parse(args[++i]); break;
-        case "--config"       when i + 1 < args.Length: cfgPath  = args[++i]; break;
-        case "--out-json"     when i + 1 < args.Length: outJson  = args[++i]; break;
-        case "--out-ascii"    when i + 1 < args.Length: outAscii = args[++i]; break;
+        case "--width"        when i + 1 < args.Length: width     = int.Parse(args[++i]); break;
+        case "--height"       when i + 1 < args.Length: height    = int.Parse(args[++i]); break;
+        case "--snakiness"    when i + 1 < args.Length: snakiness = int.Parse(args[++i]); break;
+        case "--config"       when i + 1 < args.Length: cfgPath   = args[++i]; break;
+        case "--out-json"     when i + 1 < args.Length: outJson   = args[++i]; break;
+        case "--out-ascii"    when i + 1 < args.Length: outAscii  = args[++i]; break;
         case "--verbose-json": verbose = true; break;
         case "--help": PrintHelp(); return 0;
     }
@@ -48,6 +50,7 @@ var cfg = new DungeonConfig
 {
     Width     = width,
     Height    = height,
+    Snakiness = Math.Clamp(snakiness, 0, 100),
     RoomTypes = roomTypes,
 };
 
@@ -84,6 +87,7 @@ static void PrintHelp()
           --config <path>     Room-type config JSON file (default: built-in)
           --out-json <path>   Write JSON metadata to file (default: stdout)
           --out-ascii <path>  Write ASCII tile map to file (default: stdout)
+          --snakiness <0-100> Spine snake-yness (0=straight, 100=max bends, default: 0)
           --verbose-json      Include full corridor tile lists in JSON
           --help              Show this help
 

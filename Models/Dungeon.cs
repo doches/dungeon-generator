@@ -20,6 +20,8 @@ public class DungeonConfig
     public int MaxBranchSpacing { get; set; } = 14;
     public int MinBranchLength { get; set; } = 3;
     public int MaxBranchLength { get; set; } = 8;
+    /// <summary>0 = dead straight spine; 100 = very snake-y.</summary>
+    public int Snakiness { get; set; } = 0;
 }
 
 public class RoomTypeConfig

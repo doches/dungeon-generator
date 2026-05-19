@@ -4,22 +4,26 @@ namespace DungeonGenerator.Generation;
 
 public static class BranchBuilder
 {
-    public static List<Corridor> Build(Dungeon dungeon, Corridor spine, DungeonConfig cfg, Random rng)
+    public static List<Corridor> Build(
+        Dungeon dungeon, Corridor spine, DungeonConfig cfg, Random rng,
+        IReadOnlyDictionary<int, int> yAtX, IReadOnlySet<int> jogCols)
     {
-        var branches = new List<Corridor>();
+        var branches   = new List<Corridor>();
         var usedColumns = new HashSet<int>();
+        int minJogClear = Math.Max(3, cfg.MinBranchSpacing / 2);
 
-        int spineY = spine.Start.Y;
-        int x = spine.Start.X + rng.Next(cfg.MinBranchSpacing, cfg.MaxBranchSpacing);
+        int x      = spine.Start.X + rng.Next(cfg.MinBranchSpacing, cfg.MaxBranchSpacing);
         int nextId = 1;
 
         while (x < spine.End.X - cfg.MinBranchSpacing)
         {
-            if (!usedColumns.Contains(x))
-            {
-                bool goNorth = rng.Next(2) == 0;
-                int length = rng.Next(cfg.MinBranchLength, cfg.MaxBranchLength + 1);
+            bool nearJog = jogCols.Any(jx => Math.Abs(x - jx) < minJogClear);
 
+            if (!usedColumns.Contains(x) && !nearJog && yAtX.ContainsKey(x))
+            {
+                int spineY = yAtX[x];
+                bool goNorth = rng.Next(2) == 0;
+                int length   = rng.Next(cfg.MinBranchLength, cfg.MaxBranchLength + 1);
                 int endY;
                 var branchTiles = new List<Pt>();
 
@@ -48,11 +52,11 @@ public static class BranchBuilder
                 {
                     branches.Add(new Corridor
                     {
-                        Id = nextId++,
-                        Kind = CorridorKind.Branch,
-                        Start = new Pt(x, spineY),
-                        End = new Pt(x, endY),
-                        Spine = branchTiles,
+                        Id              = nextId++,
+                        Kind            = CorridorKind.Branch,
+                        Start           = new Pt(x, spineY),
+                        End             = new Pt(x, endY),
+                        Spine           = branchTiles,
                         ParentCorridorId = spine.Id,
                     });
                     usedColumns.Add(x);

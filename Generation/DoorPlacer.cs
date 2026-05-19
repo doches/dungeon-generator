@@ -6,7 +6,7 @@ public static class DoorPlacer
 {
     private static readonly (int dx, int dy)[] Cardinals = [(0,-1),(0,1),(-1,0),(1,0)];
 
-    public static void PlaceAll(Dungeon dungeon)
+    public static void PlaceAll(Dungeon dungeon, IReadOnlyList<BendInfo>? bends = null)
     {
         // Corridor wall borders must be in place before we can detect junction walls
         PaintCorridorWalls(dungeon);
@@ -30,7 +30,35 @@ public static class DoorPlacer
             }
         }
 
+        if (bends is not null)
+            PlaceBendRoomDoors(dungeon, bends, ref doorId);
+
         BuildConnections(dungeon);
+    }
+
+    // For each bend, walk eastward from the jog column into the bend room's west wall.
+    private static void PlaceBendRoomDoors(
+        Dungeon dungeon, IReadOnlyList<BendInfo> bends, ref int doorId)
+    {
+        int spineId = dungeon.MainSpine?.Id ?? 0;
+
+        foreach (var bend in bends)
+        {
+            int yMid = bend.RoomY + bend.RoomHeight / 2;
+            int countBefore = dungeon.Doors.Count;
+
+            WalkAndPlaceDoor(dungeon, new Pt(bend.JogX, yMid), 1, 0, spineId, ref doorId);
+            if (dungeon.Doors.Count > countBefore) continue;
+
+            // Midpoint failed — try every row in the room y-range
+            for (int y = bend.RoomY; y < bend.RoomY + bend.RoomHeight; y++)
+            {
+                if (y == yMid) continue;
+                countBefore = dungeon.Doors.Count;
+                WalkAndPlaceDoor(dungeon, new Pt(bend.JogX, y), 1, 0, spineId, ref doorId);
+                if (dungeon.Doors.Count > countBefore) break;
+            }
+        }
     }
 
     // Walk from `from` in direction (dx,dy), skipping corridor and wall tiles without

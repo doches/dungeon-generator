@@ -15,6 +15,44 @@ public static class RoomBuilder
         return TryBuild(dungeon, branchEnd, dir, typeCfg, id, rng, maxRetries: 5);
     }
 
+    /// <summary>
+    /// Bend room: sits between the two spine levels to the east of the jog column.
+    /// The corridor bends around this room.
+    /// </summary>
+    public static Room? BuildBendRoom(
+        Dungeon dungeon, BendInfo bend, RoomTypeConfig typeCfg, int id, Random rng)
+    {
+        int roomH = bend.RoomHeight;
+        if (roomH < 3) return null;   // not tall enough for floor tiles
+
+        int roomX = bend.JogX + 1;
+        int roomY = bend.RoomY;
+
+        int minW = Math.Max(typeCfg.MinWidth, 4);
+        int maxW = Math.Min(typeCfg.MaxWidth, dungeon.Width - roomX - 2);
+        if (maxW < minW || roomX >= dungeon.Width - 2) return null;
+
+        int roomW = rng.Next(minW, maxW + 1);
+        if (roomY + roomH >= dungeon.Height - 1) return null;
+
+        var baseRect = new Rect(roomX, roomY, roomW, roomH);
+        if (CollisionCheck(dungeon, baseRect)) return null;
+
+        // No wings — bend rooms are constrained vertically by the spine levels
+        var rects = new List<Rect> { baseRect };
+        PaintRoom(dungeon, rects);
+
+        return new Room
+        {
+            Id          = id,
+            Type        = typeCfg.Name,
+            Tiles       = rects,
+            Bounds      = new BoundingBox(roomX, roomY, roomW, roomH),
+            IsAnchor    = false,
+            AttachPoint = new Pt(bend.JogX, roomY),
+        };
+    }
+
     // Attach point is the spine start tile; room grows west from it
     public static Room? BuildAnchorFore(
         Dungeon dungeon, int spineXMin, int spineY, RoomTypeConfig typeCfg, int id, Random rng)
