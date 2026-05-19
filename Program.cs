@@ -51,8 +51,8 @@ var cfg = new DungeonConfig
     Width             = width,
     Height            = height,
     Snakiness         = Math.Clamp(snakiness, 0, 100),
-    MinBranchSpacing  = 3,
-    MaxBranchSpacing  = 6,
+    MinBranchSpacing  = 6,
+    MaxBranchSpacing  = 12,
     RoomTypes         = roomTypes,
 };
 
