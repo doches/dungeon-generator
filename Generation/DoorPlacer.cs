@@ -12,33 +12,37 @@ public static class DoorPlacer
         PaintCorridorWalls(dungeon);
 
         int doorId = 0;
+        // Tracks which wall faces already have a door: roomId → set of (dx,dy) walk directions.
+        // Each unique (dx,dy) maps to one face: (+1,0)=west, (-1,0)=east, (0,+1)=north, (0,-1)=south.
+        var usedWalls = new Dictionary<int, HashSet<(int, int)>>();
 
         foreach (var corridor in dungeon.Corridors)
         {
             if (corridor.Kind == CorridorKind.Spine)
             {
                 // Walk outward from each spine end to find the anchor room wall
-                WalkAndPlaceDoor(dungeon, corridor.Start, -1, 0, corridor.Id, ref doorId);
-                WalkAndPlaceDoor(dungeon, corridor.End,    1, 0, corridor.Id, ref doorId);
+                WalkAndPlaceDoor(dungeon, corridor.Start, -1, 0, corridor.Id, ref doorId, usedWalls);
+                WalkAndPlaceDoor(dungeon, corridor.End,    1, 0, corridor.Id, ref doorId, usedWalls);
             }
             else
             {
                 // Branch: one step past the end tile in the branch direction
                 bool goesNorth = corridor.End.Y < corridor.Start.Y;
                 int dy = goesNorth ? -1 : 1;
-                WalkAndPlaceDoor(dungeon, corridor.End, 0, dy, corridor.Id, ref doorId);
+                WalkAndPlaceDoor(dungeon, corridor.End, 0, dy, corridor.Id, ref doorId, usedWalls);
             }
         }
 
         if (bends is not null)
-            PlaceBendRoomDoors(dungeon, bends, ref doorId);
+            PlaceBendRoomDoors(dungeon, bends, ref doorId, usedWalls);
 
         BuildConnections(dungeon);
     }
 
     // For each bend, try all three adjoining walls (west, north, south) in preference order.
     private static void PlaceBendRoomDoors(
-        Dungeon dungeon, IReadOnlyList<BendInfo> bends, ref int doorId)
+        Dungeon dungeon, IReadOnlyList<BendInfo> bends, ref int doorId,
+        Dictionary<int, HashSet<(int, int)>> usedWalls)
     {
         int spineId = dungeon.MainSpine?.Id ?? 0;
 
@@ -81,7 +85,7 @@ public static class DoorPlacer
             foreach (var (pt, dx, dy) in candidates)
             {
                 int countBefore = dungeon.Doors.Count;
-                WalkAndPlaceDoor(dungeon, pt, dx, dy, spineId, ref doorId);
+                WalkAndPlaceDoor(dungeon, pt, dx, dy, spineId, ref doorId, usedWalls);
                 if (dungeon.Doors.Count > countBefore) break;
             }
         }
@@ -90,7 +94,8 @@ public static class DoorPlacer
     // Walk from `from` in direction (dx,dy), skipping corridor and wall tiles without
     // floor neighbours, until we find a wall that IS adjacent to a floor tile.
     private static void WalkAndPlaceDoor(
-        Dungeon dungeon, Pt from, int dx, int dy, int corridorId, ref int doorId)
+        Dungeon dungeon, Pt from, int dx, int dy, int corridorId, ref int doorId,
+        Dictionary<int, HashSet<(int, int)>> usedWalls)
     {
         int x = from.X + dx, y = from.Y + dy;
         int maxSteps = Math.Max(dungeon.Width, dungeon.Height);
@@ -106,10 +111,20 @@ public static class DoorPlacer
 
             if (tile == TileType.Wall && HasFloorNeighbour(dungeon, new Pt(x, y)))
             {
+                var room = FindRoomAtDoor(dungeon, new Pt(x, y));
+
+                // Enforce one door per wall face per room
+                if (room is not null)
+                {
+                    if (!usedWalls.TryGetValue(room.Id, out var dirs))
+                        usedWalls[room.Id] = dirs = new();
+                    if (!dirs.Add((dx, dy)))
+                        return; // this face already has a door
+                }
+
                 dungeon.Grid[x, y] = TileType.Door;
 
                 var door = new Door { Id = doorId++, Position = new Pt(x, y), CorridorId = corridorId };
-                var room = FindRoomAtDoor(dungeon, new Pt(x, y));
                 if (room is not null)
                 {
                     door.RoomAId = room.Id;
