@@ -64,11 +64,26 @@ public static class Generator
         }
 
         // 5. Branch rooms (one per branch, at the branch end)
+        var branchesWithRooms = new HashSet<Pt>();
         foreach (var branch in branches)
         {
             var typeCfg = PickRoomType(weightedTypes, totalWeight, rng);
             var room    = RoomBuilder.BuildForBranch(dungeon, branch, typeCfg, nextRoomId++, rng);
-            if (room is not null) dungeon.Rooms.Add(room);
+            if (room is not null)
+            {
+                dungeon.Rooms.Add(room);
+                branchesWithRooms.Add(branch.End);
+            }
+        }
+
+        // 5a. Prune dead-end branches (no room could be placed at the end)
+        var deadBranches = branches.Where(b => !branchesWithRooms.Contains(b.End)).ToList();
+        foreach (var dead in deadBranches)
+        {
+            foreach (var pt in dead.Spine)
+                if (dungeon.Grid[pt.X, pt.Y] == TileType.VertCorridor)
+                    dungeon.Grid[pt.X, pt.Y] = TileType.Void;
+            dungeon.Corridors.Remove(dead);
         }
 
         // 6. Outside corridors: low-probability horizontal loops along the north/south sides
