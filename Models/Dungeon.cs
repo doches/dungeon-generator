@@ -9,6 +9,7 @@ public class Dungeon
     public List<Corridor> Corridors { get; set; } = new();
     public List<Door> Doors { get; set; } = new();
     public Corridor? MainSpine { get; set; }
+    public int SpineWidth { get; set; } = 1;
 }
 
 public class DungeonConfig

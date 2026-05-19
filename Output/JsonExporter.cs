@@ -55,6 +55,7 @@ public static class JsonExporter
         RoomAId    = d.RoomAId,
         RoomBId    = d.RoomBId,
         CorridorId = d.CorridorId,
+        IsWide     = d.IsWide ? true : null,
     };
 
     private static PtDto    ToPtDto(Pt p)         => new(p.X, p.Y);
@@ -102,6 +103,7 @@ record DoorDto
     public int?   RoomAId    { get; init; }
     public int?   RoomBId    { get; init; }
     public int?   CorridorId { get; init; }
+    public bool?  IsWide     { get; init; }
 }
 
 record PtDto(int X, int Y);

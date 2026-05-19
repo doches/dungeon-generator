@@ -9,4 +9,5 @@ public enum TileType : byte
     VertCorridor  = 4,
     Door          = 5,
     SpineCorridor = 6,
+    WideDoor      = 7,
 }

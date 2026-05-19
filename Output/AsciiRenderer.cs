@@ -14,6 +14,7 @@ public static class AsciiRenderer
         '|',  // VertCorridor
         '+',  // Door
         '-',  // SpineCorridor (same glyph as horiz)
+        '=',  // WideDoor
     ];
 
     public static string Render(Dungeon dungeon)

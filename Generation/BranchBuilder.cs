@@ -8,7 +8,7 @@ public static class BranchBuilder
         Dungeon dungeon, Corridor spine, DungeonConfig cfg, Random rng,
         IReadOnlyDictionary<int, int> yAtX, IReadOnlySet<int> jogCols)
     {
-        var branches   = new List<Corridor>();
+        var branches    = new List<Corridor>();
         var usedColumns = new HashSet<int>();
         int minJogClear = Math.Max(3, cfg.MinBranchSpacing / 2);
 
@@ -21,42 +21,44 @@ public static class BranchBuilder
 
             if (!usedColumns.Contains(x) && !nearJog && yAtX.ContainsKey(x))
             {
-                int spineY = yAtX[x];
-                bool goNorth = rng.Next(2) == 0;
-                int length   = rng.Next(cfg.MinBranchLength, cfg.MaxBranchLength + 1);
+                int spineTopY    = yAtX[x];
+                int spineBottomY = spineTopY + dungeon.SpineWidth - 1;
+                bool goNorth     = rng.Next(2) == 0;
+                int length       = rng.Next(cfg.MinBranchLength, cfg.MaxBranchLength + 1);
                 int endY;
-                var branchTiles = new List<Pt>();
+                var branchTiles  = new List<Pt>();
 
                 if (goNorth)
                 {
-                    endY = spineY - length;
-                    if (endY < 2) { endY = 2; length = spineY - endY; }
+                    endY = spineTopY - length;
+                    if (endY < 2) { endY = 2; length = spineTopY - endY; }
                     for (int dy = 1; dy <= length; dy++)
                     {
-                        dungeon.Grid[x, spineY - dy] = TileType.VertCorridor;
-                        branchTiles.Add(new Pt(x, spineY - dy));
+                        dungeon.Grid[x, spineTopY - dy] = TileType.VertCorridor;
+                        branchTiles.Add(new Pt(x, spineTopY - dy));
                     }
                 }
                 else
                 {
-                    endY = spineY + length;
-                    if (endY > dungeon.Height - 3) { endY = dungeon.Height - 3; length = endY - spineY; }
+                    endY = spineBottomY + length;
+                    if (endY > dungeon.Height - 3) { endY = dungeon.Height - 3; length = endY - spineBottomY; }
                     for (int dy = 1; dy <= length; dy++)
                     {
-                        dungeon.Grid[x, spineY + dy] = TileType.VertCorridor;
-                        branchTiles.Add(new Pt(x, spineY + dy));
+                        dungeon.Grid[x, spineBottomY + dy] = TileType.VertCorridor;
+                        branchTiles.Add(new Pt(x, spineBottomY + dy));
                     }
                 }
 
                 if (length > 0)
                 {
+                    int branchStartY = goNorth ? spineTopY : spineBottomY;
                     branches.Add(new Corridor
                     {
-                        Id              = nextId++,
-                        Kind            = CorridorKind.Branch,
-                        Start           = new Pt(x, spineY),
-                        End             = new Pt(x, endY),
-                        Spine           = branchTiles,
+                        Id               = nextId++,
+                        Kind             = CorridorKind.Branch,
+                        Start            = new Pt(x, branchStartY),
+                        End              = new Pt(x, endY),
+                        Spine            = branchTiles,
                         ParentCorridorId = spine.Id,
                     });
                     usedColumns.Add(x);

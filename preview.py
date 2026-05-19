@@ -13,6 +13,7 @@ Tile glyphs (from dungeon-generator):
     '-'  Horizontal corridor / spine
     '|'  Vertical corridor
     '+'  Door
+    '='  Wide door (airlock / security)
 """
 
 import sys
@@ -28,6 +29,7 @@ PALETTE = {
     "-": (34,  58,  82),   # H-corridor   — darker slate
     "|": (34,  58,  82),   # V-corridor   — same as H
     "+": (220, 170,  50),  # Door         — amber gold
+    "=": (220, 110,  30),  # Wide door    — deep orange
 }
 DEFAULT_COLOR = (20, 20, 30)
 
@@ -43,6 +45,7 @@ ROOM_COLORS = {
     "CrewQuarters": (110,  65, 175),  # quarters purple
     "Storage":      (160, 130,  40),  # cargo gold
     "Lab":          ( 45, 175, 190),  # science cyan
+    "Corridor":     ( 38,  68,  98),  # spine corridor — dark steel
 }
 
 # ── Legend rows ───────────────────────────────────────────────────────────────
@@ -52,6 +55,7 @@ TILE_LEGEND = [
     (".", "Floor"),
     ("-", "Corridor"),
     ("+", "Door"),
+    ("=", "Wide Door"),
 ]
 LEGEND_BG      = (16, 18, 30)
 LEGEND_TEXT    = (200, 210, 230)
@@ -93,7 +97,7 @@ def render(rows: list[str], tile: int,
 
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
-            if ch == "." and room_floor_colors and (x, y) in room_floor_colors:
+            if ch in (".", "-") and room_floor_colors and (x, y) in room_floor_colors:
                 color = room_floor_colors[(x, y)]
             else:
                 color = PALETTE.get(ch, DEFAULT_COLOR)

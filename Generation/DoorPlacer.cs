@@ -59,11 +59,13 @@ public static class DoorPlacer
         foreach (var bend in bends)
         {
             var room = dungeon.Rooms.FirstOrDefault(
-                r => !r.IsAnchor && r.AttachPoint == new Pt(bend.JogX, bend.RoomY));
+                r => !r.IsAnchor && r.Type != "Corridor" && r.AttachPoint == new Pt(bend.JogX, bend.RoomY));
 
             int yTop = Math.Min(bend.Y1, bend.Y2);
             int yBot = Math.Max(bend.Y1, bend.Y2);
             int yMid = bend.RoomY + bend.RoomHeight / 2;
+            // Walk from the bottom of the upper segment (last SpineCorridor row before the gap)
+            int yTopWalkRow = yTop + bend.SpineWidth - 1;
 
             var candidates = new List<(Pt pt, int dx, int dy)>();
 
@@ -76,12 +78,12 @@ public static class DoorPlacer
             {
                 int xMid = room.Bounds.X + room.Bounds.Width / 2;
 
-                // North wall — walk south from upper spine segment
-                candidates.Add((new Pt(xMid, yTop), 0, 1));
+                // North wall — walk south from bottom row of upper spine segment
+                candidates.Add((new Pt(xMid, yTopWalkRow), 0, 1));
                 for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
-                    if (x != xMid) candidates.Add((new Pt(x, yTop), 0, 1));
+                    if (x != xMid) candidates.Add((new Pt(x, yTopWalkRow), 0, 1));
 
-                // South wall — walk north from lower spine segment
+                // South wall — walk north from top row of lower spine segment
                 candidates.Add((new Pt(xMid, yBot), 0, -1));
                 for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
                     if (x != xMid) candidates.Add((new Pt(x, yBot), 0, -1));
@@ -184,8 +186,9 @@ public static class DoorPlacer
             if (x < 0 || y < 0 || x >= dungeon.Width || y >= dungeon.Height) return;
 
             var tile = dungeon.Grid[x, y];
-            if (tile == TileType.Floor) return;
-            if (tile == TileType.Door)  return;
+            if (tile == TileType.Floor)    return;
+            if (tile == TileType.Door)     return;
+            if (tile == TileType.WideDoor) return;
 
             if (tile == TileType.Wall && HasFloorNeighbour(dungeon, new Pt(x, y)))
             {
@@ -225,9 +228,9 @@ public static class DoorPlacer
     private static void RemoveStrayDoors(Dungeon dungeon)
     {
         static bool Traversable(TileType t) =>
-            t == TileType.Floor      || t == TileType.Door
+            t == TileType.Floor         || t == TileType.Door
          || t == TileType.SpineCorridor || t == TileType.HorizCorridor
-         || t == TileType.VertCorridor;
+         || t == TileType.VertCorridor  || t == TileType.WideDoor;
 
         bool TileOk(int x, int y)
         {

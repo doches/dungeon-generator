@@ -7,4 +7,5 @@ public class Door
     public int? RoomAId { get; set; }
     public int? RoomBId { get; set; }
     public int? CorridorId { get; set; }
+    public bool IsWide { get; set; }
 }

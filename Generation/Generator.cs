@@ -27,9 +27,10 @@ public static class Generator
         if (aftCfg  is not null) spineXMax = cfg.Width - aftCfg.MaxWidth - 3;
 
         // 1. Spine (straight or snake-y depending on Snakiness)
-        var (spine, yAtX, bends, jogCols) =
+        var (spine, yAtX, bends, jogCols, spineWidth) =
             SpineBuilder.Build(dungeon, spineXMin, spineXMax, cfg, rng);
-        dungeon.MainSpine = spine;
+        dungeon.MainSpine  = spine;
+        dungeon.SpineWidth = spineWidth;
         dungeon.Corridors.Add(spine);
 
         // 2. Branch corridors (uses yAtX so each branch meets the spine at the right height)
@@ -103,10 +104,147 @@ public static class Generator
         PruneDeadEndBranches(dungeon, outsideBranches, outsideBranchesWithRooms);
         PruneSmallRooms(dungeon);
 
+        // 6c. Divide spine into named corridor rooms separated by wide airlock doors
+        CreateCorridorRooms(dungeon, yAtX, jogCols, branches, spineWidth, ref nextRoomId, rng);
+
         // 7. Doors, corridor walls, connections
         DoorPlacer.PlaceAll(dungeon, bends);
 
         return dungeon;
+    }
+
+    // ── Corridor rooms and wide airlock doors ─────────────────────────────────
+    private static void CreateCorridorRooms(
+        Dungeon dungeon, Dictionary<int, int> yAtX, IReadOnlySet<int> jogCols,
+        List<Corridor> spineBranches, int spineWidth, ref int nextRoomId, Random rng)
+    {
+        var segments    = FindHorizontalSegments(yAtX, jogCols);
+        var branchXCols = new HashSet<int>(spineBranches.Select(b => b.Start.X));
+        int nextDoorId  = dungeon.Doors.Count > 0 ? dungeon.Doors.Max(d => d.Id) + 1 : 0;
+
+        int doorCount       = Math.Min(2, spineWidth);
+        int doorStartOffset = spineWidth / 2 - doorCount / 2;
+
+        foreach (var (xMin, xMax, segY) in segments)
+        {
+            int segLen      = xMax - xMin + 1;
+            int maxDividers = segLen < 10 ? 0 : segLen < 20 ? 1 : segLen < 35 ? 2 : 3;
+            int numDividers = maxDividers == 0 ? 0 : rng.Next(0, maxDividers + 1);
+
+            var dividers = new List<int>();
+            for (int k = 1; k <= numDividers; k++)
+            {
+                int idealX = xMin + segLen * k / (numDividers + 1);
+                int found  = -1;
+                for (int delta = 0; delta <= segLen / 4 && found < 0; delta++)
+                {
+                    foreach (int candidate in delta == 0
+                        ? (IEnumerable<int>)new[] { idealX }
+                        : new[] { idealX - delta, idealX + delta })
+                    {
+                        if (candidate <= xMin || candidate >= xMax) continue;
+                        if (branchXCols.Contains(candidate)) continue;
+                        if (jogCols.Contains(candidate)) continue;
+                        if (dividers.Any(d => Math.Abs(d - candidate) < 4)) continue;
+                        found = candidate;
+                        break;
+                    }
+                }
+                if (found >= 0) dividers.Add(found);
+            }
+            dividers.Sort();
+
+            // Paint wide door tiles at each divider column
+            foreach (int divX in dividers)
+                for (int dy = 0; dy < spineWidth; dy++)
+                {
+                    bool isWideDoor = dy >= doorStartOffset && dy < doorStartOffset + doorCount;
+                    dungeon.Grid[divX, segY + dy] = isWideDoor ? TileType.WideDoor : TileType.Wall;
+                }
+
+            // Create one corridor room per sub-segment between dividers
+            var segRooms    = new List<Room>();
+            var roomBounds  = new List<(int x1, int x2)>();
+            int prevX = xMin;
+            foreach (int divX in dividers)
+            {
+                if (divX - 1 >= prevX) roomBounds.Add((prevX, divX - 1));
+                prevX = divX + 1;
+            }
+            if (prevX <= xMax) roomBounds.Add((prevX, xMax));
+
+            foreach (var (x1, x2) in roomBounds)
+            {
+                if (x2 < x1) continue;
+
+                int roomW = x2 - x1 + 1;
+                var rect  = new Rect(x1, segY, roomW, spineWidth);
+                var room  = new Room
+                {
+                    Id          = nextRoomId++,
+                    Type        = "Corridor",
+                    Tiles       = new List<Rect> { rect },
+                    Bounds      = new BoundingBox(x1, segY, roomW, spineWidth),
+                    IsAnchor    = false,
+                    AttachPoint = new Pt(x1, segY),
+                };
+                dungeon.Rooms.Add(room);
+                segRooms.Add(room);
+            }
+
+            // Register a Door object for each wide door tile
+            foreach (int divX in dividers)
+            {
+                var roomLeft  = segRooms.LastOrDefault(r  => r.Bounds.X + r.Bounds.Width - 1 < divX);
+                var roomRight = segRooms.FirstOrDefault(r => r.Bounds.X > divX);
+
+                for (int dy = doorStartOffset; dy < doorStartOffset + doorCount; dy++)
+                {
+                    var doorPt = new Pt(divX, segY + dy);
+                    var door   = new Door
+                    {
+                        Id       = nextDoorId++,
+                        Position = doorPt,
+                        RoomAId  = roomLeft?.Id,
+                        RoomBId  = roomRight?.Id,
+                        IsWide   = true,
+                    };
+                    roomLeft?.DoorPositions.Add(doorPt);
+                    roomRight?.DoorPositions.Add(doorPt);
+                    dungeon.Doors.Add(door);
+                }
+            }
+        }
+    }
+
+    private static List<(int xMin, int xMax, int y)> FindHorizontalSegments(
+        Dictionary<int, int> yAtX, IReadOnlySet<int> jogCols)
+    {
+        var sorted = yAtX
+            .Where(kv => !jogCols.Contains(kv.Key))
+            .OrderBy(kv => kv.Key)
+            .ToList();
+
+        if (sorted.Count == 0) return new();
+
+        var segments = new List<(int, int, int)>();
+        int segStart = sorted[0].Key;
+        int segY     = sorted[0].Value;
+        int prevX    = sorted[0].Key;
+
+        for (int i = 1; i < sorted.Count; i++)
+        {
+            int x = sorted[i].Key, y = sorted[i].Value;
+            if (y != segY || x != prevX + 1)
+            {
+                segments.Add((segStart, prevX, segY));
+                segStart = x;
+                segY     = y;
+            }
+            prevX = x;
+        }
+        segments.Add((segStart, prevX, segY));
+        return segments;
     }
 
     private static RoomTypeConfig PickRoomType(
@@ -144,6 +282,8 @@ public static class Generator
 
         foreach (var room in dungeon.Rooms.ToList())
         {
+            if (room.Type == "Corridor") continue; // corridor rooms have no floor tiles
+
             var union = new HashSet<(int x, int y)>();
             foreach (var rect in room.Tiles)
                 for (int rx = rect.X; rx < rect.X + rect.Width; rx++)
