@@ -77,59 +77,31 @@ public static class Generator
         }
 
         // 5a. Prune dead-end branches (no room could be placed at the end)
-        var deadBranches = branches.Where(b => !branchesWithRooms.Contains(b.End)).ToList();
-        foreach (var dead in deadBranches)
-        {
-            foreach (var pt in dead.Spine)
-                if (dungeon.Grid[pt.X, pt.Y] == TileType.VertCorridor)
-                    dungeon.Grid[pt.X, pt.Y] = TileType.Void;
-            dungeon.Corridors.Remove(dead);
-        }
+        PruneDeadEndBranches(dungeon, branches, branchesWithRooms);
 
         // 5b. Prune rooms with fewer than 5 floor tiles
-        var prunedIds          = new HashSet<int>();
-        var prunedAttachPoints = new HashSet<Pt>();
-        foreach (var room in dungeon.Rooms.ToList())
-        {
-            var union = new HashSet<(int x, int y)>();
-            foreach (var rect in room.Tiles)
-                for (int rx = rect.X; rx < rect.X + rect.Width; rx++)
-                    for (int ry = rect.Y; ry < rect.Y + rect.Height; ry++)
-                        union.Add((rx, ry));
-
-            if (union.Count(p => dungeon.Grid[p.x, p.y] == TileType.Floor) >= 5) continue;
-
-            foreach (var (x, y) in union)
-                dungeon.Grid[x, y] = TileType.Void;
-
-            prunedIds.Add(room.Id);
-            prunedAttachPoints.Add(room.AttachPoint);
-            dungeon.Rooms.Remove(room);
-        }
-
-        if (prunedIds.Count > 0)
-        {
-            // Cascade-prune branch corridors whose room was just removed
-            var orphans = dungeon.Corridors
-                .Where(c => c.Kind == CorridorKind.Branch && prunedAttachPoints.Contains(c.End))
-                .ToList();
-            foreach (var c in orphans)
-            {
-                foreach (var pt in c.Spine)
-                    if (dungeon.Grid[pt.X, pt.Y] == TileType.VertCorridor)
-                        dungeon.Grid[pt.X, pt.Y] = TileType.Void;
-                dungeon.Corridors.Remove(c);
-            }
-
-            // Strip door records referencing pruned rooms (defensive — doors placed after this step)
-            dungeon.Doors.RemoveAll(d =>
-                (d.RoomAId.HasValue && prunedIds.Contains(d.RoomAId.Value)) ||
-                (d.RoomBId.HasValue && prunedIds.Contains(d.RoomBId.Value)));
-        }
+        PruneSmallRooms(dungeon);
 
         // 6. Outside corridors: low-probability horizontal loops along the north/south sides
         int nextCorridorId = dungeon.Corridors.Max(c => c.Id) + 1;
-        OutsideCorridorBuilder.Build(dungeon, branches, rng, ref nextCorridorId);
+        var outsideBranches = OutsideCorridorBuilder.Build(dungeon, branches, rng, ref nextCorridorId);
+
+        // 6a. Build rooms at outside corridor branch ends
+        var outsideBranchesWithRooms = new HashSet<Pt>();
+        foreach (var branch in outsideBranches)
+        {
+            var typeCfg = PickRoomType(weightedTypes, totalWeight, rng);
+            var room    = RoomBuilder.BuildForBranch(dungeon, branch, typeCfg, nextRoomId++, rng);
+            if (room is not null)
+            {
+                dungeon.Rooms.Add(room);
+                outsideBranchesWithRooms.Add(branch.End);
+            }
+        }
+
+        // 6b. Prune dead-end outside branches and small outside rooms
+        PruneDeadEndBranches(dungeon, outsideBranches, outsideBranchesWithRooms);
+        PruneSmallRooms(dungeon);
 
         // 7. Doors, corridor walls, connections
         DoorPlacer.PlaceAll(dungeon, bends);
@@ -151,5 +123,58 @@ public static class Generator
             if (roll < cumulative) return t;
         }
         return types[^1];
+    }
+
+    private static void PruneDeadEndBranches(Dungeon dungeon, IEnumerable<Corridor> branches, HashSet<Pt> builtEnds)
+    {
+        var dead = branches.Where(b => !builtEnds.Contains(b.End)).ToList();
+        foreach (var c in dead)
+        {
+            foreach (var pt in c.Spine)
+                if (dungeon.Grid[pt.X, pt.Y] == TileType.VertCorridor)
+                    dungeon.Grid[pt.X, pt.Y] = TileType.Void;
+            dungeon.Corridors.Remove(c);
+        }
+    }
+
+    private static void PruneSmallRooms(Dungeon dungeon)
+    {
+        var prunedIds          = new HashSet<int>();
+        var prunedAttachPoints = new HashSet<Pt>();
+
+        foreach (var room in dungeon.Rooms.ToList())
+        {
+            var union = new HashSet<(int x, int y)>();
+            foreach (var rect in room.Tiles)
+                for (int rx = rect.X; rx < rect.X + rect.Width; rx++)
+                    for (int ry = rect.Y; ry < rect.Y + rect.Height; ry++)
+                        union.Add((rx, ry));
+
+            if (union.Count(p => dungeon.Grid[p.x, p.y] == TileType.Floor) >= 5) continue;
+
+            foreach (var (x, y) in union)
+                dungeon.Grid[x, y] = TileType.Void;
+
+            prunedIds.Add(room.Id);
+            prunedAttachPoints.Add(room.AttachPoint);
+            dungeon.Rooms.Remove(room);
+        }
+
+        if (prunedIds.Count == 0) return;
+
+        var orphans = dungeon.Corridors
+            .Where(c => c.Kind == CorridorKind.Branch && prunedAttachPoints.Contains(c.End))
+            .ToList();
+        foreach (var c in orphans)
+        {
+            foreach (var pt in c.Spine)
+                if (dungeon.Grid[pt.X, pt.Y] == TileType.VertCorridor)
+                    dungeon.Grid[pt.X, pt.Y] = TileType.Void;
+            dungeon.Corridors.Remove(c);
+        }
+
+        dungeon.Doors.RemoveAll(d =>
+            (d.RoomAId.HasValue && prunedIds.Contains(d.RoomAId.Value)) ||
+            (d.RoomBId.HasValue && prunedIds.Contains(d.RoomBId.Value)));
     }
 }
