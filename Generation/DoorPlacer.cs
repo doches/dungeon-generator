@@ -36,7 +36,7 @@ public static class DoorPlacer
         BuildConnections(dungeon);
     }
 
-    // For each bend, walk eastward from the jog column into the bend room's west wall.
+    // For each bend, try all three adjoining walls (west, north, south) in preference order.
     private static void PlaceBendRoomDoors(
         Dungeon dungeon, IReadOnlyList<BendInfo> bends, ref int doorId)
     {
@@ -44,18 +44,44 @@ public static class DoorPlacer
 
         foreach (var bend in bends)
         {
+            // Find the room placed at this bend (AttachPoint set in BuildBendRoom)
+            var room = dungeon.Rooms.FirstOrDefault(
+                r => !r.IsAnchor && r.AttachPoint == new Pt(bend.JogX, bend.RoomY));
+
+            int yTop = Math.Min(bend.Y1, bend.Y2);
+            int yBot = Math.Max(bend.Y1, bend.Y2);
             int yMid = bend.RoomY + bend.RoomHeight / 2;
-            int countBefore = dungeon.Doors.Count;
 
-            WalkAndPlaceDoor(dungeon, new Pt(bend.JogX, yMid), 1, 0, spineId, ref doorId);
-            if (dungeon.Doors.Count > countBefore) continue;
+            // Build candidate (startPt, dx, dy) list in preference order.
+            // WalkAndPlaceDoor steps one tile in (dx,dy) from startPt before checking,
+            // so the start tile should be the corridor tile immediately outside the wall.
+            var candidates = new List<(Pt pt, int dx, int dy)>();
 
-            // Midpoint failed — try every row in the room y-range
+            // West wall — walk east from jog column (midpoint first, then rest)
+            candidates.Add((new Pt(bend.JogX, yMid), 1, 0));
             for (int y = bend.RoomY; y < bend.RoomY + bend.RoomHeight; y++)
+                if (y != yMid) candidates.Add((new Pt(bend.JogX, y), 1, 0));
+
+            if (room is not null)
             {
-                if (y == yMid) continue;
-                countBefore = dungeon.Doors.Count;
-                WalkAndPlaceDoor(dungeon, new Pt(bend.JogX, y), 1, 0, spineId, ref doorId);
+                int xMid = room.Bounds.X + room.Bounds.Width / 2;
+
+                // North wall — walk south from the upper horizontal spine segment
+                candidates.Add((new Pt(xMid, yTop), 0, 1));
+                for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
+                    if (x != xMid) candidates.Add((new Pt(x, yTop), 0, 1));
+
+                // South wall — walk north from the lower horizontal spine segment
+                candidates.Add((new Pt(xMid, yBot), 0, -1));
+                for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
+                    if (x != xMid) candidates.Add((new Pt(x, yBot), 0, -1));
+            }
+
+            // Place the first door that succeeds
+            foreach (var (pt, dx, dy) in candidates)
+            {
+                int countBefore = dungeon.Doors.Count;
+                WalkAndPlaceDoor(dungeon, pt, dx, dy, spineId, ref doorId);
                 if (dungeon.Doors.Count > countBefore) break;
             }
         }
