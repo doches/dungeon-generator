@@ -48,10 +48,12 @@ var roomTypes = JsonSerializer.Deserialize<List<RoomTypeConfig>>(configJson, jso
 
 var cfg = new DungeonConfig
 {
-    Width     = width,
-    Height    = height,
-    Snakiness = Math.Clamp(snakiness, 0, 100),
-    RoomTypes = roomTypes,
+    Width             = width,
+    Height            = height,
+    Snakiness         = Math.Clamp(snakiness, 0, 100),
+    MinBranchSpacing  = 3,
+    MaxBranchSpacing  = 6,
+    RoomTypes         = roomTypes,
 };
 
 // ── Generate ──────────────────────────────────────────────────────────────────
