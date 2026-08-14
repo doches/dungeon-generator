@@ -28,7 +28,7 @@ public static class OutsideCorridorBuilder
             .Where(b => north ? b.End.Y < b.Start.Y : b.End.Y > b.Start.Y)
             .Select(b => dungeon.Rooms.FirstOrDefault(r => r.AttachPoint == b.End))
             .OfType<Room>()
-            .OrderBy(r => r.Bounds.X)
+            .OrderBy(r => r.X)
             .ToList();
 
     private static int TryConnectSide(
@@ -75,11 +75,11 @@ public static class OutsideCorridorBuilder
     // The bounding-box centre can fall in a gap when a wing widens the box, so we scan outward.
     private static int FindBoundaryX(Dungeon dungeon, Room room, bool north)
     {
-        int boundaryY = north ? room.Bounds.Y : room.Bounds.Y + room.Bounds.Height - 1;
+        int boundaryY = north ? room.Y : room.Y + room.Height - 1;
         int interiorY = north ? boundaryY + 1  : boundaryY - 1;
-        int centerX   = room.Bounds.X + room.Bounds.Width / 2;
+        int centerX   = room.X + room.Width / 2;
 
-        for (int delta = 0; delta <= room.Bounds.Width / 2 + 1; delta++)
+        for (int delta = 0; delta <= room.Width / 2 + 1; delta++)
         {
             foreach (int x in delta == 0
                 ? (IEnumerable<int>)new[] { centerX }
@@ -105,13 +105,13 @@ public static class OutsideCorridorBuilder
         if (Math.Abs(xA - xB) < 3) return (null, new());
 
         int yCorr = north
-            ? Math.Min(a.Bounds.Y, b.Bounds.Y) - 1
-            : Math.Max(a.Bounds.Y + a.Bounds.Height - 1, b.Bounds.Y + b.Bounds.Height - 1) + 1;
+            ? Math.Min(a.Y, b.Y) - 1
+            : Math.Max(a.Y + a.Height - 1, b.Y + b.Height - 1) + 1;
 
         if (yCorr < 1 || yCorr >= dungeon.Height - 1) return (null, new());
 
-        int yANear = north ? a.Bounds.Y - 1 : a.Bounds.Y + a.Bounds.Height;
-        int yBNear = north ? b.Bounds.Y - 1 : b.Bounds.Y + b.Bounds.Height;
+        int yANear = north ? a.Y - 1 : a.Y + a.Height;
+        int yBNear = north ? b.Y - 1 : b.Y + b.Height;
 
         var seen  = new HashSet<(int, int)>();
         var tiles = new List<Pt>();

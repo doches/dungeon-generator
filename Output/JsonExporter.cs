@@ -19,20 +19,23 @@ public static class JsonExporter
         {
             GridWidth  = dungeon.Width,
             GridHeight = dungeon.Height,
-            Rooms      = dungeon.Rooms.Select(r => ToRoomDto(r, dungeon)).ToList(),
+            Rooms      = dungeon.Rooms.Select(r => ToRoomDto(r)).ToList(),
             Corridors  = dungeon.Corridors.Select(c => ToCorridorDto(c, verboseSpine)).ToList(),
             Doors      = dungeon.Doors.Select(ToDoorDto).ToList(),
         };
         return JsonSerializer.Serialize(dto, Options);
     }
 
-    private static RoomDto ToRoomDto(Room r, Dungeon dungeon) => new()
+    private static RoomDto ToRoomDto(Room r) => new()
     {
         Id            = r.Id,
         Type          = r.Type,
         IsAnchor      = r.IsAnchor ? true : null,
-        Bounds        = ToBoundsDto(r.Bounds),
-        Tiles         = r.Tiles.Select(ToRectDto).ToList(),
+        X             = r.X,
+        Y             = r.Y,
+        Width         = r.Width,
+        Height        = r.Height,
+        TemplateId    = r.TemplateId,
         DoorPositions = r.DoorPositions.Select(ToPtDto).ToList(),
         Connections   = r.ConnectedIds.Count > 0 ? r.ConnectedIds : null,
     };
@@ -56,11 +59,10 @@ public static class JsonExporter
         RoomBId    = d.RoomBId,
         CorridorId = d.CorridorId,
         IsWide     = d.IsWide ? true : null,
+        Face       = d.Face?.ToString(),
     };
 
-    private static PtDto    ToPtDto(Pt p)         => new(p.X, p.Y);
-    private static RectDto  ToRectDto(Rect r)     => new(r.X, r.Y, r.Width, r.Height);
-    private static BoundsDto ToBoundsDto(BoundingBox b) => new(b.X, b.Y, b.Width, b.Height);
+    private static PtDto ToPtDto(Pt p) => new(p.X, p.Y);
 }
 
 // DTO records for clean JSON shape
@@ -76,13 +78,16 @@ record DungeonDto
 
 record RoomDto
 {
-    public int              Id            { get; init; }
-    public string           Type          { get; init; } = "";
-    public bool?            IsAnchor      { get; init; }
-    public BoundsDto        Bounds        { get; init; } = new(0,0,0,0);
-    public List<RectDto>    Tiles         { get; init; } = new();
-    public List<PtDto>      DoorPositions { get; init; } = new();
-    public List<int>?       Connections   { get; init; }
+    public int          Id            { get; init; }
+    public string       Type          { get; init; } = "";
+    public bool?        IsAnchor      { get; init; }
+    public int          X             { get; init; }
+    public int          Y             { get; init; }
+    public int          Width         { get; init; }
+    public int          Height        { get; init; }
+    public string?      TemplateId    { get; init; }
+    public List<PtDto>  DoorPositions { get; init; } = new();
+    public List<int>?   Connections   { get; init; }
 }
 
 record CorridorDto
@@ -104,8 +109,7 @@ record DoorDto
     public int?   RoomBId    { get; init; }
     public int?   CorridorId { get; init; }
     public bool?  IsWide     { get; init; }
+    public string? Face      { get; init; }
 }
 
 record PtDto(int X, int Y);
-record RectDto(int X, int Y, int Width, int Height);
-record BoundsDto(int X, int Y, int Width, int Height);

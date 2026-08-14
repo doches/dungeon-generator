@@ -11,10 +11,6 @@ public static class DoorPlacer
         PaintCorridorWalls(dungeon);
 
         int doorId   = 0;
-        // Tracks which wall faces already have a door: roomId → set of (dx,dy) walk directions.
-        // Convention: (dx,dy) is the direction walked to reach this room's face.
-        //   (+1, 0) → west face   (-1, 0) → east face
-        //   ( 0,+1) → north face  ( 0,-1) → south face
         var usedWalls = new Dictionary<int, HashSet<(int, int)>>();
 
         foreach (var corridor in dungeon.Corridors)
@@ -64,7 +60,6 @@ public static class DoorPlacer
             int yTop = Math.Min(bend.Y1, bend.Y2);
             int yBot = Math.Max(bend.Y1, bend.Y2);
             int yMid = bend.RoomY + bend.RoomHeight / 2;
-            // Walk from the bottom of the upper segment (last SpineCorridor row before the gap)
             int yTopWalkRow = yTop + bend.SpineWidth - 1;
 
             var candidates = new List<(Pt pt, int dx, int dy)>();
@@ -76,16 +71,16 @@ public static class DoorPlacer
 
             if (room is not null)
             {
-                int xMid = room.Bounds.X + room.Bounds.Width / 2;
+                int xMid = room.X + room.Width / 2;
 
                 // North wall — walk south from bottom row of upper spine segment
                 candidates.Add((new Pt(xMid, yTopWalkRow), 0, 1));
-                for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
+                for (int x = room.X; x < room.X + room.Width; x++)
                     if (x != xMid) candidates.Add((new Pt(x, yTopWalkRow), 0, 1));
 
                 // South wall — walk north from top row of lower spine segment
                 candidates.Add((new Pt(xMid, yBot), 0, -1));
-                for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
+                for (int x = room.X; x < room.X + room.Width; x++)
                     if (x != xMid) candidates.Add((new Pt(x, yBot), 0, -1));
             }
 
@@ -103,17 +98,24 @@ public static class DoorPlacer
         Dungeon dungeon, ref int doorId,
         Dictionary<int, HashSet<(int, int)>> usedWalls)
     {
-        // Map each wall tile position → the room that owns it
+        // Map each wall tile position → the room that owns it (skip Corridor rooms)
         var wallToRoom = new Dictionary<(int, int), Room>();
         foreach (var room in dungeon.Rooms)
-            foreach (var rect in room.Tiles)
-                for (int x = rect.X; x < rect.X + rect.Width; x++)
-                    for (int y = rect.Y; y < rect.Y + rect.Height; y++)
-                        if (dungeon.Grid[x, y] == TileType.Wall)
-                            wallToRoom[(x, y)] = room;
+        {
+            if (room.Type == "Corridor") continue;
+            for (int x = room.X; x < room.X + room.Width; x++)
+            {
+                TryAddWall(dungeon, x, room.Y,                   room, wallToRoom);
+                TryAddWall(dungeon, x, room.Y + room.Height - 1, room, wallToRoom);
+            }
+            for (int y = room.Y + 1; y < room.Y + room.Height - 1; y++)
+            {
+                TryAddWall(dungeon, room.X,                  y, room, wallToRoom);
+                TryAddWall(dungeon, room.X + room.Width - 1, y, room, wallToRoom);
+            }
+        }
 
         // Collect adjacent wall pairs from different rooms, grouped by room pair
-        // Only scan dx=+1 and dy=+1 to avoid counting each pair twice
         var groups = new Dictionary<(int, int), List<(int x, int y, int nx, int ny, int dx, int dy)>>();
 
         foreach (var ((x, y), roomA) in wallToRoom)
@@ -134,14 +136,12 @@ public static class DoorPlacer
         // For each adjacent room pair, pick the centre-most candidate and place one door
         foreach (var list in groups.Values)
         {
-            // Sort for consistent centre selection
             list.Sort((a, b) => a.x != b.x ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y));
             var (x, y, nx, ny, dx, dy) = list[list.Count / 2];
 
             var roomA = wallToRoom[(x, y)];
             var roomB = wallToRoom[(nx, ny)];
 
-            // Verify floor tiles exist on both interiors
             int ax = x - dx, ay = y - dy;
             int bx = nx + dx, by = ny + dy;
             if (ax < 0 || ay < 0 || ax >= dungeon.Width  || ay >= dungeon.Height) continue;
@@ -149,28 +149,34 @@ public static class DoorPlacer
             if (dungeon.Grid[ax, ay] != TileType.Floor) continue;
             if (dungeon.Grid[bx, by] != TileType.Floor) continue;
 
-            // usedWalls convention: entering roomA from roomB's side = walking (-dx,-dy)
-            //                       entering roomB from roomA's side = walking ( dx, dy)
             if (!CanUseWall(usedWalls, roomA.Id, -dx, -dy)) continue;
             if (!CanUseWall(usedWalls, roomB.Id,  dx,  dy)) continue;
 
             dungeon.Grid[x, y]   = TileType.Door;
-            dungeon.Grid[nx, ny] = TileType.Floor; // open the second wall into roomB
+            dungeon.Grid[nx, ny] = TileType.Floor;
 
             MarkWallUsed(usedWalls, roomA.Id, -dx, -dy);
             MarkWallUsed(usedWalls, roomB.Id,  dx,  dy);
 
             var door = new Door
             {
-                Id      = doorId++,
+                Id       = doorId++,
                 Position = new Pt(x, y),
                 RoomAId  = roomA.Id,
                 RoomBId  = roomB.Id,
+                Face     = dx == 1 ? DoorFace.East : DoorFace.South,
             };
             roomA.DoorPositions.Add(new Pt(x, y));
             roomB.DoorPositions.Add(new Pt(x, y));
             dungeon.Doors.Add(door);
         }
+    }
+
+    private static void TryAddWall(Dungeon dungeon, int x, int y, Room room, Dictionary<(int, int), Room> wallToRoom)
+    {
+        if (x < 0 || y < 0 || x >= dungeon.Width || y >= dungeon.Height) return;
+        if (dungeon.Grid[x, y] == TileType.Wall)
+            wallToRoom[(x, y)] = room;
     }
 
     // ── WalkAndPlaceDoor ──────────────────────────────────────────────────────
@@ -202,7 +208,13 @@ public static class DoorPlacer
 
                 dungeon.Grid[x, y] = TileType.Door;
 
-                var door = new Door { Id = doorId++, Position = new Pt(x, y), CorridorId = corridorId };
+                var door = new Door
+                {
+                    Id         = doorId++,
+                    Position   = new Pt(x, y),
+                    CorridorId = corridorId,
+                    Face       = room is not null ? FaceFromWalkDir(dx, dy) : null,
+                };
                 if (room is not null)
                 {
                     door.RoomAId = room.Id;
@@ -222,9 +234,17 @@ public static class DoorPlacer
         }
     }
 
+    // Walking south (dy=+1) → hits north wall; walking north (dy=-1) → hits south wall.
+    // Walking east (dx=+1) → hits west wall;  walking west (dx=-1) → hits east wall.
+    private static DoorFace FaceFromWalkDir(int dx, int dy) => (dx, dy) switch
+    {
+        ( 0,  1) => DoorFace.North,
+        ( 0, -1) => DoorFace.South,
+        ( 1,  0) => DoorFace.West,
+        _        => DoorFace.East,
+    };
+
     // ── Stray door removal ────────────────────────────────────────────────────
-    // A door is valid only if it has a traversable tile on both sides along
-    // exactly one axis (the axis it was intended to open across).
     private static void RemoveStrayDoors(Dungeon dungeon)
     {
         static bool Traversable(TileType t) =>
@@ -325,10 +345,10 @@ public static class DoorPlacer
             if (nx < 0 || ny < 0 || nx >= dungeon.Width || ny >= dungeon.Height) continue;
             if (dungeon.Grid[nx, ny] != TileType.Floor) continue;
             foreach (var room in dungeon.Rooms)
-                foreach (var rect in room.Tiles)
-                    if (nx >= rect.X && nx < rect.X + rect.Width
-                     && ny >= rect.Y && ny < rect.Y + rect.Height)
-                        return room;
+                if (room.Type != "Corridor"
+                 && nx >= room.X && nx < room.X + room.Width
+                 && ny >= room.Y && ny < room.Y + room.Height)
+                    return room;
         }
         return null;
     }

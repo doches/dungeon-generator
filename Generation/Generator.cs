@@ -178,13 +178,14 @@ public static class Generator
                 if (x2 < x1) continue;
 
                 int roomW = x2 - x1 + 1;
-                var rect  = new Rect(x1, segY, roomW, spineWidth);
                 var room  = new Room
                 {
                     Id          = nextRoomId++,
                     Type        = "Corridor",
-                    Tiles       = new List<Rect> { rect },
-                    Bounds      = new BoundingBox(x1, segY, roomW, spineWidth),
+                    X           = x1,
+                    Y           = segY,
+                    Width       = roomW,
+                    Height      = spineWidth,
                     IsAnchor    = false,
                     AttachPoint = new Pt(x1, segY),
                 };
@@ -195,8 +196,8 @@ public static class Generator
             // Register a Door object for each wide door tile
             foreach (int divX in dividers)
             {
-                var roomLeft  = segRooms.LastOrDefault(r  => r.Bounds.X + r.Bounds.Width - 1 < divX);
-                var roomRight = segRooms.FirstOrDefault(r => r.Bounds.X > divX);
+                var roomLeft  = segRooms.LastOrDefault(r  => r.X + r.Width - 1 < divX);
+                var roomRight = segRooms.FirstOrDefault(r => r.X > divX);
 
                 for (int dy = doorStartOffset; dy < doorStartOffset + doorCount; dy++)
                 {
@@ -282,18 +283,18 @@ public static class Generator
 
         foreach (var room in dungeon.Rooms.ToList())
         {
-            if (room.Type == "Corridor") continue; // corridor rooms have no floor tiles
+            if (room.Type == "Corridor") continue;
 
-            var union = new HashSet<(int x, int y)>();
-            foreach (var rect in room.Tiles)
-                for (int rx = rect.X; rx < rect.X + rect.Width; rx++)
-                    for (int ry = rect.Y; ry < rect.Y + rect.Height; ry++)
-                        union.Add((rx, ry));
+            int floorCount = 0;
+            for (int rx = room.X; rx < room.X + room.Width; rx++)
+                for (int ry = room.Y; ry < room.Y + room.Height; ry++)
+                    if (dungeon.Grid[rx, ry] == TileType.Floor) floorCount++;
 
-            if (union.Count(p => dungeon.Grid[p.x, p.y] == TileType.Floor) >= 5) continue;
+            if (floorCount >= 5) continue;
 
-            foreach (var (x, y) in union)
-                dungeon.Grid[x, y] = TileType.Void;
+            for (int rx = room.X; rx < room.X + room.Width; rx++)
+                for (int ry = room.Y; ry < room.Y + room.Height; ry++)
+                    dungeon.Grid[rx, ry] = TileType.Void;
 
             prunedIds.Add(room.Id);
             prunedAttachPoints.Add(room.AttachPoint);

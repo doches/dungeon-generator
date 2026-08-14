@@ -20,9 +20,9 @@ dungeon-generator/
 ├── preview.py                  Python/Pillow PNG renderer
 ├── Models/
 │   ├── TileType.cs             TileType enum (byte)
-│   ├── Room.cs                 Room, Pt, Rect, BoundingBox records
+│   ├── Room.cs                 Room (slot: X,Y,Width,Height,TemplateId) + Pt record
 │   ├── Corridor.cs             Corridor, CorridorKind enum
-│   ├── Door.cs                 Door (with IsWide flag)
+│   ├── Door.cs                 Door + DoorFace enum (North/South/East/West)
 │   └── Dungeon.cs              Dungeon, DungeonConfig, RoomTypeConfig
 ├── Generation/
 │   ├── Generator.cs            Top-level orchestrator
@@ -39,9 +39,10 @@ dungeon-generator/
 ## Key design decisions
 
 - **Single source of truth**: `TileType[,] Grid` — all rendering reads the grid; JSON metadata is derived from it.
-- **Rooms as rect unions**: each `Room` stores `List<Rect>` (base rectangle + wings). Union of rects = rectilinear room shape.
+- **Rooms as abstract slots**: each `Room` stores a flat `X, Y, Width, Height` rectangle — no tile lists, no wings. The grid is painted with a simple perimeter-wall rectangle for collision/door purposes; the room itself is the slot. At design time a `TemplateId` is assigned by a room editor to reference a pre-built template that fills the space.
+- **Door faces**: `Door.Face` (a `DoorFace?` enum) records which wall of `RoomA` the door is on (`North/South/East/West`), derived from the corridor's walk direction.
 - **No NuGet packages**: uses `System.Text.Json` (in-box for .NET 10).
-- **Wall painting**: a tile is `Wall` if any cardinal neighbour is outside the union of all room rects.
+- **Wall painting**: a tile is `Wall` if it is on the perimeter of the room rectangle (outermost row/column).
 
 ## TileType enum
 
@@ -97,9 +98,8 @@ ASCII glyphs: `' '  '#'  '.'  '-'  '|'  '+'  '-'  '='`
 ## RoomBuilder
 
 - **`TryBuild`** — up to 5 retries with shrinking size on collision; rooms clamped 1 tile from map edge
-- **`AddWings`** — 0–2 wings per room; each wing shares one edge side with the base rect (1-tile overlap)
-- **`CollisionCheck`** — returns true if any tile in rect is Floor, Wall, or any Corridor type
-- **`PaintRoom`** — union of all rects; perimeter tiles with any cardinal neighbour outside the union → Wall; interior → Floor
+- **`CollisionCheck`** — returns true if any tile in the bounding rect is Floor, Wall, or any Corridor type
+- **`PaintRoom`** — perimeter tiles → Wall, interior tiles → Floor; no wings or rect unions
 
 ## OutsideCorridorBuilder
 
@@ -111,7 +111,7 @@ ASCII glyphs: `' '  '#'  '.'  '-'  '|'  '+'  '-'  '='`
 ## Preview (preview.py)
 
 - Requires Pillow (`pip install Pillow`)
-- `load_room_floor_colors(json_path)` — builds `{(x,y): rgb}` from all room tile rects
+- `load_room_floor_colors(json_path)` — builds `{(x,y): rgb}` from room slot bounds (`x,y,width,height`)
 - `render()` — applies room color to `'.'` and `'-'` tiles when position is in the color dict
 - `add_legend()` — appends a legend bar; two rows when JSON supplied (tile types + room types)
 - Wide doors `'='` render in deep orange; corridor rooms `"Corridor"` render in dark steel blue
